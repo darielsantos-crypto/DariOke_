@@ -325,51 +325,9 @@
   .clearBtn:hover{background: rgba(0,0,0,.06); color: rgba(0,0,0,.75)}
 
 
-  /* Player embutido (overlay 90% da tela) */
-  .playerOverlay{
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.72);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    z-index: 9999;
-  }
-  .playerOverlay.show{display:flex}
-  .playerFrame{
-    width: min(1200px, 90vw);
-    height: min(90vh, 720px);
-    background: #000;
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0,0,0,.35);
-    position: relative;
-  }
-  .playerClose{
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    border: 0;
-    background: rgba(255,255,255,.18);
-    color: #fff;
-    font-size: 22px;
-    font-weight: 1000;
-    cursor: pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    backdrop-filter: blur(6px);
-  }
-  .playerClose:hover{background: rgba(255,255,255,.26)}
-  .playerIframe{
-    width: 100%;
-    height: 100%;
-    border: 0;
-    display:block;
+  .btn.youtube{
+    background:#ff0000;
+    color:#ffffff;
   }
 
 </style>
@@ -391,6 +349,11 @@
         <button class="tab active" data-tab="busca" role="tab">Buscar</button>
         <button class="tab" data-tab="sorteio" role="tab">Sortear música</button>
         <button class="tab cta" data-tab="lista" role="tab">Ver lista completa</button>
+
+<button class="btn youtube" onclick="window.open('https://www.youtube.com', '_blank')">
+  Buscar no YouTube
+</button>
+
       </div>
     </div>
 
@@ -506,84 +469,21 @@ function toast(msg){
   el._t = setTimeout(()=> el.style.display="none", 1800);
 }
 
-
-function ytId(url){
-  try{
-    const u = new URL(url);
-    // youtu.be/<id>
-    if (u.hostname.includes("youtu.be")) return u.pathname.replace("/","").split("/")[0] || "";
-    // youtube.com/watch?v=<id>
-    const v = u.searchParams.get("v");
-    if (v) return v;
-    // youtube.com/embed/<id>
-    const m = u.pathname.match(/\/embed\/([^\/\?]+)/);
-    if (m && m[1]) return m[1];
-    return "";
-  }catch(e){
-    // fallback simples
-    const m = (url||"").match(/(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-    return m ? m[1] : "";
-  }
-}
-
-function ytEmbedUrl(url){
-  const id = ytId(url);
-  if(!id) return "";
-  const params = new URLSearchParams({
-    autoplay: "1",
-    rel: "0",
-    modestbranding: "1",
-    playsinline: "1",
-    // começa sem sugestões agressivas
-    // (nota: o YouTube pode ignorar alguns comportamentos conforme política/conta)
-  });
-  return `https://www.youtube.com/embed/${id}?${params.toString()}`;
-}
-
-function openPlayer(url){
-  const overlay = document.getElementById("playerOverlay");
-  const iframe = document.getElementById("playerIframe");
-  const src = ytEmbedUrl(url);
-
-  if(!src){
-    toast("Não consegui abrir o vídeo (link inválido).");
+function openPopup(url){
+  const w = Math.round(Math.min(screen.availWidth*0.93, 1100));
+  const h = Math.round(Math.min(screen.availHeight*0.93, 720));
+  const left = Math.round((screen.availWidth - w)/2);
+  const top = Math.round((screen.availHeight - h)/2);
+  const features = `popup=yes,noopener,noreferrer,width=${w},height=${h},left=${left},top=${top}`;
+  const win = window.open(url, "_blank", features);
+  if (!win) {
+    // Se o navegador bloquear pop-up, abre em nova aba normal
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast("Pop-up bloqueado, abri em nova aba.");
     return;
   }
-
-  iframe.src = src;
-  overlay.classList.add("show");
-  overlay.setAttribute("aria-hidden","false");
-  document.body.style.overflow = "hidden";
+  win.focus();
 }
-
-function closePlayer(){
-  const overlay = document.getElementById("playerOverlay");
-  const iframe = document.getElementById("playerIframe");
-  overlay.classList.remove("show");
-  overlay.setAttribute("aria-hidden","true");
-  // para o vídeo
-  iframe.src = "";
-  document.body.style.overflow = "";
-}
-
-(function initPlayerOverlay(){
-  const overlay = document.getElementById("playerOverlay");
-  const frame = overlay?.querySelector(".playerFrame");
-  const btn = document.getElementById("playerClose");
-  if(!overlay || !frame || !btn) return;
-
-  btn.addEventListener("click", closePlayer);
-
-  // clicar fora do frame fecha
-  overlay.addEventListener("click", (e)=>{
-    if(e.target === overlay) closePlayer();
-  });
-
-  // ESC fecha
-  window.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape" && overlay.classList.contains("show")) closePlayer();
-  });
-})();
 
 function copy(text){
   navigator.clipboard?.writeText(text).then(()=> toast("Link copiado!")).catch(()=> {
@@ -669,9 +569,9 @@ function renderDrop(list){
     const btn = document.createElement("button");
     btn.className = "open";
     btn.textContent = "Abrir";
-    btn.addEventListener("click", (e)=>{ e.stopPropagation(); openPlayer(r.u); });
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); openPopup(r.u); });
 
-    div.addEventListener("click", ()=> openPlayer(r.u));
+    div.addEventListener("click", ()=> openPopup(r.u));
     div.appendChild(main);
     div.appendChild(btn);
     drop.appendChild(div);
@@ -721,7 +621,7 @@ function moveSel(dir){
 
 function openSelected(){
   const r = state.lastResults[state.sel];
-  if (r) openPlayer(r.u);
+  if (r) openPopup(r.u);
 }
 
 function initTabs(){
@@ -755,7 +655,7 @@ function pickRandom(){
   const meta = document.getElementById("randMeta");
   meta.innerHTML = `<span class="tag">${escapeHtml(r.t || "Sem tipo")}</span><span>${escapeHtml(r.x)}</span><span><a href="#" id="randLink">Copiar link</a></span>`;
   box.style.display = "block";
-  document.getElementById("btnOpenRandom").onclick = ()=> openPlayer(r.u);
+  document.getElementById("btnOpenRandom").onclick = ()=> openPopup(r.u);
   document.getElementById("btnCopyRandom").onclick = ()=> copy(r.u);
   document.getElementById("randLink").onclick = (e)=>{ e.preventDefault(); copy(r.u); };
 }
@@ -837,7 +737,7 @@ function renderList(resetScroll){
   area.innerHTML = html || `<div style="padding: 14px 10px; color: rgba(0,0,0,.70); font-weight:900">Nada encontrado.</div>`;
 
   area.querySelectorAll("button[data-url]").forEach(b=>{
-    b.addEventListener("click", ()=> openPlayer(b.dataset.url));
+    b.addEventListener("click", ()=> openPopup(b.dataset.url));
   });
 
   const btnMore = document.getElementById("btnMore");
@@ -883,18 +783,5 @@ setTimeout(()=> document.getElementById("q").focus(), 120);
 })();
 
 </script>
-
-<!-- Player embutido -->
-<div id="playerOverlay" class="playerOverlay" aria-hidden="true">
-  <div class="playerFrame" role="dialog" aria-label="Player do YouTube">
-    <button id="playerClose" class="playerClose" type="button" aria-label="Fechar">×</button>
-    <iframe id="playerIframe" class="playerIframe"
-      src=""
-      title="YouTube player"
-      allow="autoplay; encrypted-media; picture-in-picture"
-      allowfullscreen></iframe>
-  </div>
-</div>
-
 </body>
 </html>
