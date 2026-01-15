@@ -3,170 +3,158 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RSVP + Trello</title>
+  <title>RSVP - Trello</title>
+
   <style>
     body { font-family: Arial, sans-serif; margin: 24px; }
     label { display:block; margin-top: 12px; }
-    input, select, button { padding: 10px; margin-top: 6px; width: 320px; max-width: 100%; }
+    input, select, button {
+      padding: 10px;
+      margin-top: 6px;
+      width: 320px;
+      max-width: 100%;
+    }
     button { width: auto; cursor: pointer; }
 
-    /* Modal simples */
     .backdrop {
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background: rgba(0,0,0,.55);
-      display: none; align-items: center; justify-content: center;
-      padding: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
     }
     .modal {
-      background: #fff; border-radius: 10px; padding: 18px;
-      width: 520px; max-width: 100%;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px;
+      width: 520px;
+      max-width: 100%;
     }
-    .row { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
     .pill {
-      background:#f3f4f6; border:1px solid #e5e7eb;
-      border-radius: 8px; padding: 10px;
+      background:#f3f4f6;
+      border:1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
       word-break: break-all;
-      flex: 1;
-      min-width: 240px;
+      margin-top: 12px;
     }
-    .small { color:#555; font-size: 13px; margin-top: 8px; }
-    .actions { display:flex; gap:10px; flex-wrap: wrap; margin-top: 14px; }
+    .actions {
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .small { font-size: 13px; color:#555; margin-top: 8px; }
   </style>
 </head>
+
 <body>
 
-  <h2>RSVP</h2>
+<h2>RSVP</h2>
 
-  <form id="rsvpForm">
-    <label>
-      Nome
-      <input type="text" id="nome" required />
-    </label>
+<form id="rsvpForm">
+  <label>
+    Nome
+    <input type="text" id="nome" required>
+  </label>
 
-    <label>
-      Telefone
-      <input type="tel" id="telefone" required />
-    </label>
+  <label>
+    Telefone
+    <input type="tel" id="telefone" required>
+  </label>
 
-    <label>
-      Confirmação
-      <select id="confirmacao" required>
-        <option value="">Selecione</option>
-        <option value="Sim">Sim</option>
-        <option value="Não">Não</option>
-      </select>
-    </label>
+  <label>
+    Confirmação
+    <select id="confirmacao" required>
+      <option value="">Selecione</option>
+      <option value="Sim">Sim</option>
+      <option value="Não">Não</option>
+    </select>
+  </label>
 
-    <label>
-      O que vai beber
-      <select id="bebida" required>
-        <option value="">Selecione</option>
-        <option value="Drink">Drink</option>
-        <option value="Chopp">Chopp</option>
-        <option value="Não bebo">Não bebo</option>
-      </select>
-    </label>
+  <label>
+    O que vai beber
+    <select id="bebida" required>
+      <option value="">Selecione</option>
+      <option value="Drink">Drink</option>
+      <option value="Chopp">Chopp</option>
+      <option value="Não bebo">Não bebo</option>
+    </select>
+  </label>
 
-    <div class="row" style="margin-top:16px;">
-      <button type="submit">Enviar</button>
-      <button type="button" id="limpar">Limpar</button>
+  <br>
+  <button type="submit">Enviar</button>
+</form>
+
+<!-- MODAL -->
+<div class="backdrop" id="backdrop">
+  <div class="modal">
+    <h3>Enviar para o Trello</h3>
+
+    <p class="small">
+      Envie os dados para este e-mail para criar um card automaticamente no Trello:
+    </p>
+
+    <div class="pill" id="trelloEmail">
+      dariel_silva_lcn+ubwuuidmmvhcnwhj8tuh@boards.trello.com
     </div>
-  </form>
 
-  <!-- Modal -->
-  <div class="backdrop" id="backdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
-      <h3 id="tituloModal">Enviar para o Trello</h3>
-
-      <div class="small">
-        Copie o e-mail abaixo (Email-to-board) e envie a confirmação por e-mail para criar um card no Trello.
-      </div>
-
-      <div class="row">
-        <div class="Trello COMUNICAÇÃO LUCENA <dariel_silva_lcn+ubwuuidmmvhcnwhj8tuh@boards.trello.com></div>
-      </div>
-
-      <div class="actions">
-        <button type="button" id="copiar">Copiar e-mail</button>
-        <button type="button" id="abrirEmail">Abrir e-mail com os dados</button>
-        <button type="button" id="fechar">Fechar</button>
-      </div>
-
-      <div class="small" id="status"></div>
+    <div class="actions">
+      <button id="copiar">Copiar e-mail</button>
+      <button id="abrirEmail">Abrir e-mail com os dados</button>
+      <button id="fechar">Fechar</button>
     </div>
+
+    <div class="small" id="status"></div>
   </div>
+</div>
 
-  <script>
-    // 1) Coloque aqui o e-mail do Trello do seu quadro:
-    const TRELLO_EMAIL = "SEU_EMAIL_DO_TRELLO_AQUI@boards.trello.com";
+<script>
+  const TRELLO_EMAIL =
+    "dariel_silva_lcn+ubwuuidmmvhcnwhj8tuh@boards.trello.com";
 
-    const form = document.getElementById("rsvpForm");
-    const backdrop = document.getElementById("backdrop");
-    const trelloEmailEl = document.getElementById("trelloEmail");
-    const statusEl = document.getElementById("status");
+  const form = document.getElementById("rsvpForm");
+  const backdrop = document.getElementById("backdrop");
+  const statusEl = document.getElementById("status");
 
-    const btnCopiar = document.getElementById("copiar");
-    const btnFechar = document.getElementById("fechar");
-    const btnAbrirEmail = document.getElementById("abrirEmail");
-    const btnLimpar = document.getElementById("limpar");
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    backdrop.style.display = "flex";
+  });
 
-    trelloEmailEl.textContent = TRELLO_EMAIL;
+  document.getElementById("fechar").onclick = () => {
+    backdrop.style.display = "none";
+  };
 
-    function abrirModal() {
-      statusEl.textContent = "";
-      backdrop.style.display = "flex";
-      backdrop.setAttribute("aria-hidden", "false");
+  document.getElementById("copiar").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(TRELLO_EMAIL);
+      statusEl.textContent = "E-mail copiado com sucesso.";
+    } catch {
+      statusEl.textContent = "Não foi possível copiar automaticamente.";
     }
+  };
 
-    function fecharModal() {
-      backdrop.style.display = "none";
-      backdrop.setAttribute("aria-hidden", "true");
-    }
+  document.getElementById("abrirEmail").onclick = () => {
+    const nome = document.getElementById("nome").value;
+    const telefone = document.getElementById("telefone").value;
+    const confirmacao = document.getElementById("confirmacao").value;
+    const bebida = document.getElementById("bebida").value;
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      abrirModal();
-    });
+    const assunto = encodeURIComponent("RSVP - " + nome);
+    const corpo = encodeURIComponent(
+      `Nome: ${nome}\n` +
+      `Telefone: ${telefone}\n` +
+      `Confirmação: ${confirmacao}\n` +
+      `Bebida: ${bebida}`
+    );
 
-    btnLimpar.addEventListener("click", () => {
-      form.reset();
-    });
-
-    btnFechar.addEventListener("click", fecharModal);
-
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) fecharModal();
-    });
-
-    btnCopiar.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(TRELLO_EMAIL);
-        statusEl.textContent = "E-mail copiado!";
-      } catch {
-        statusEl.textContent = "Não consegui copiar automaticamente. Selecione e copie manualmente.";
-      }
-    });
-
-    btnAbrirEmail.addEventListener("click", () => {
-      const nome = document.getElementById("nome").value.trim();
-      const telefone = document.getElementById("telefone").value.trim();
-      const confirmacao = document.getElementById("confirmacao").value;
-      const bebida = document.getElementById("bebida").value;
-
-      // Assunto e corpo para criar um card informativo no Trello via e-mail
-      const assunto = encodeURIComponent(`RSVP - ${nome || "Sem nome"}`);
-      const corpo = encodeURIComponent(
-        `Nome: ${nome}\n` +
-        `Telefone: ${telefone}\n` +
-        `Confirmação: ${confirmacao}\n` +
-        `Bebida: ${bebida}\n`
-      );
-
-      // Abre o cliente de e-mail do usuário
-      window.location.href = `mailto:${encodeURIComponent(TRELLO_EMAIL)}?subject=${assunto}&body=${corpo}`;
-    });
-  </script>
+    window.location.href =
+      `mailto:${TRELLO_EMAIL}?subject=${assunto}&body=${corpo}`;
+  };
+</script>
 
 </body>
 </html>
